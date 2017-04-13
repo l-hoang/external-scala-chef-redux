@@ -93,7 +93,8 @@ class ChefParser extends RegexParsers {
     combineLine | combineLine2 | divideLine | divideLine2 |
     liquefyContentsLine | liquefyContentsLine2 | liquefyLine |
     stirBowlLine | stirBowlLine2 |
-    stirIngredientLine | stirIngredientLine2 ) <~ """[\n]*""".r
+    stirIngredientLine | stirIngredientLine2 |
+    mixLine | mixBowlLine | mixBowlLine2 ) <~ """[\n]*""".r
 
   /* Parses a Take line */
   def takeLine: Parser[ChefLine] =
@@ -185,7 +186,7 @@ class ChefParser extends RegexParsers {
   /* Parse add dry line with optional mixing bowl */
   def addDryLine: Parser[ChefLine] = 
     """Add +dry +ingredients +to +mixing +bowl""".r ~> number.? <~ "." ^^ {
-      case None => println("adklfj");AddDry(1)
+      case None => AddDry(1)
       case Some(bowl) => AddDry(bowl)
     }
 
@@ -247,7 +248,9 @@ class ChefParser extends RegexParsers {
 
   /* Parses a mix bowl line */
   def mixBowlLine2: Parser[ChefLine] =
-    """Mix +the +mixing +bowl +well""".r <~ "." ^^ { _ => Mix(1) }
+    """Mix +mixing +bowl""".r  ~> number <~ "well".r <~ "." ^^ { 
+      bowl => Mix(bowl) 
+    }
 
   /* Parses the final serves statement in a recipe */
   def serves: Parser[Int] = 
