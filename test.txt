@@ -47,7 +47,11 @@ Mix well.
 Mix the mixing bowl well.
 Mix mixing bowl  4023450 well.
 Clean mixing bowl.
-Clean mixing bowl 3.
+Clean mixing bowl 3.  
+Pour contents of the mixing bowl into the baking dish.
+Pour contents of mixing bowl 49 into the baking dish.
+Pour contents of the mixing bowl into baking dish 394.
+Pour contents of mixing bowl 49 into baking dish 394.
 
 Recipe number 2.
 

@@ -94,7 +94,8 @@ class ChefParser extends RegexParsers {
     liquefyContentsLine | liquefyContentsLine2 | liquefyLine |
     stirBowlLine | stirBowlLine2 |
     stirIngredientLine | stirIngredientLine2 |
-    mixLine | mixBowlLine | mixBowlLine2 | cleanLine) <~ """[\n]*""".r
+    mixLine | mixBowlLine | mixBowlLine2 | cleanLine |
+    pourLine | pourLine2 | pourLine3 | pourLine4 ) <~ """[\n]*""".r
 
   /* Parses a Take line */
   def takeLine: Parser[ChefLine] =
@@ -257,6 +258,23 @@ class ChefParser extends RegexParsers {
     """Clean +mixing +bowl""".r ~> (number.? <~ ".") ^^ {
       case None => ClearStack(1)
       case Some(bowl) => ClearStack(bowl)
+    }
+
+  /* 4 different variants of pour line based on which optional things
+   * appear */
+  def pourLine: Parser[ChefLine] =
+    """Pour +contents +of +the +mixing +bowl +into +the +baking +dish""".r <~ 
+    "." ^^ { _ => CopyStack(1, 1) }
+  def pourLine2: Parser[ChefLine] =
+    """Pour +contents +of +mixing +bowl""".r ~> number <~ 
+    """into +the +baking +dish""".r <~ "." ^^ { bowl => CopyStack(bowl, 1) }
+  def pourLine3: Parser[ChefLine] =
+    """Pour +contents +of +the +mixing +bowl +into +baking +dish""".r ~>
+    number <~ "." ^^ { dish => CopyStack(1, dish) }
+  def pourLine4: Parser[ChefLine] =
+    ("""Pour +contents +of +mixing +bowl""".r ~> 
+    number) ~ ("""into +baking +dish""".r ~> number <~ ".") ^^ { 
+      case bowl ~ dish => CopyStack(bowl, dish) 
     }
 
   /* Parses the final serves statement in a recipe */
