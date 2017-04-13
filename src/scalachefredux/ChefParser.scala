@@ -90,7 +90,8 @@ class ChefParser extends RegexParsers {
     (takeLine | putLine | foldLine | 
     addDryLine | addDryLine2 |
     addLine | addLine2 | removeLine | removeLine2 |
-    combineLine | combineLine2 | divideLine | divideLine2 ) <~ """[\n]*""".r
+    combineLine | combineLine2 | divideLine | divideLine2 |
+    liquefyContentsLine | liquefyContentsLine2 | liquefyLine) <~ """[\n]*""".r
 
   /* Parses a Take line */
   def takeLine: Parser[ChefLine] =
@@ -188,7 +189,25 @@ class ChefParser extends RegexParsers {
 
   /* Parse add dry line with no optional mixing bowl */
   def addDryLine2: Parser[ChefLine] = 
-    """Add *dry *ingredients""".r <~ "." ^^ { _ => println("here");AddDry(1) }
+    """Add *dry *ingredients""".r <~ "." ^^ { _ => AddDry(1) }
+
+  /* Parse liquefy line */
+  def liquefyLine: Parser[ChefLine] = 
+    "Liquefy " ~> """[A-Za-z- _]+""".r <~ "." ^^ {
+      i => Liquefy(i.trim)
+    }
+
+  /* Parse liquefy contents line */
+  def liquefyContentsLine: Parser[ChefLine] = 
+    """Liquefy *contents *of *the *mixing *bowl""".r <~ "." ^^ {
+      _ => LiquefyContents(1)
+    }
+
+  /* Parse liquefy contents variant line */
+  def liquefyContentsLine2: Parser[ChefLine] = 
+    """Liquefy *contents *of *mixing *bowl""".r ~> number <~ "." ^^ {
+      bowl => LiquefyContents(bowl)
+    }
 
   /* Parses the final serves statement in a recipe */
   def serves: Parser[Int] = 
