@@ -31,6 +31,11 @@ import scala.collection.mutable
 import scala.collection.mutable.HashMap
 import java.util.ArrayDeque
 
+/* Holds the results of the parse of a single Chef recipe */
+class ParseResult {
+
+}
+
 class ChefIngredient(name: String, interpretation: IState, initValue: Int = -1, 
                      copy: Boolean = false, cInitialized: Boolean = false) {
 /* Class that represents a Chef ingredient. Has the ingredient quantity as well

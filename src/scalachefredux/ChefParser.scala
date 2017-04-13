@@ -14,8 +14,7 @@ class ChefParser extends RegexParsers {
   override val whiteSpace = "[ \t\r\f]+".r
 
   def chefProgram: Parser[String] =
-    chefRecipe ~ chefRecipe ^^ {
-    case x ~ y => x + y}
+    chefRecipe.+ ^^ { case x => "prog " + x + "\n"  }
 
   /* Parses a single recipe */
   def chefRecipe: Parser[String] = 
@@ -28,7 +27,7 @@ class ChefParser extends RegexParsers {
     chefLine.+ ~
     serves.? ^^
     { case _title ~ _ingredients ~ _lines ~ _serves => _title + _ingredients +
-      _lines + _serves}
+      _lines + _serves + "\n"}
   
   /* Parses a title; drop the period at the end */
   def chefTitle: Parser[String] = 
@@ -57,7 +56,7 @@ class ChefParser extends RegexParsers {
 
   /* Parses heaped/level */
   def heapedLevel: Parser[String] =
-    ("heaped" | "level") ^^ {x => println(x); x}
+    ("heaped" | "level") ^^ {x => x}
 
   /* Parses a measure, which may include an option heaped/level */
   def measure: Parser[String] = 
@@ -95,7 +94,8 @@ class ChefParser extends RegexParsers {
     stirBowlLine | stirBowlLine2 |
     stirIngredientLine | stirIngredientLine2 |
     mixLine | mixBowlLine | mixBowlLine2 | cleanLine |
-    pourLine | pourLine2 | pourLine3 | pourLine4 ) <~ """[\n]*""".r
+    pourLine | pourLine2 | pourLine3 | pourLine4 |
+    verbEndLine2 | verbEndLine | verbLine ) <~ """[\n]*""".r
 
   /* Parses a Take line */
   def takeLine: Parser[ChefLine] =
@@ -277,9 +277,32 @@ class ChefParser extends RegexParsers {
       case bowl ~ dish => CopyStack(bowl, dish) 
     }
 
+  /* Parses a verb/loop beginning */
+  def verbLine: Parser[ChefLine] =
+    ("""[A-Za-z-_]+ """.r <~ "the") ~ """[A-Za-z- _]+""".r <~ "." ^^ {
+      case v ~ ing => 
+        val verb = v.trim.toLowerCase
+        LoopStart(if (verb endsWith "e") verb + "d" else verb + "ed", 
+                  ing.trim, -1)
+    }
+
+  /* Parses a verb/loop end */
+  def verbEndLine: Parser[ChefLine] =
+    ("""[A-Za-z-_]+ """.r ~> "the") ~> ("""[A-Za-z-_ ]+ +until""".r) ~
+    ("""[A-Za-z-_]+""".r <~ ".") ^^ {
+      case i ~ v =>
+        LoopEnd(v.toLowerCase, getIngredient(i, "until"), -1)
+    }
+
+  /* Parses verb/loop end variant */
+  def verbEndLine2: Parser[ChefLine] =
+    """[A-Za-z-_]+ +until""".r ~> ("""[A-Za-z-_]+""".r <~ ".") ^^ {
+      v => LoopEnd(v.toLowerCase, "", -1)
+    }
+
   /* Parses the final serves statement in a recipe */
-  def serves: Parser[Int] = 
-    """Serves """ ~> number <~ "." <~ newLine
+  def serves: Parser[ChefLine] = 
+    """Serves """ ~> number <~ "." <~ newLine ^^ { num => PrintStacks(num) }
 
   /* Deal with new lines, i.e. require 1 at least */
   def newLine: Parser[String] = 
