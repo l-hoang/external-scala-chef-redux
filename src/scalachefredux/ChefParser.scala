@@ -87,12 +87,14 @@ class ChefParser extends RegexParsers {
 
   /* Parses a Chef statement */
   def chefLine: Parser[ChefLine] = 
-    (takeLine | putLine | foldLine | addLine | addLine2 | removeLine | removeLine2 |
-    combineLine | combineLine2 | divideLine | divideLine2) <~ "." <~ """[\n]*""".r
+    (takeLine | putLine | foldLine | 
+    addDryLine | addDryLine2 |
+    addLine | addLine2 | removeLine | removeLine2 |
+    combineLine | combineLine2 | divideLine | divideLine2 ) <~ """[\n]*""".r
 
   /* Parses a Take line */
   def takeLine: Parser[ChefLine] =
-    "Take " ~> """[A-Za-z- _]+ *from *refrigerator""".r ^^ { longString =>
+    "Take " ~> """[A-Za-z- _]+ *from *refrigerator""".r <~ "." ^^ { longString =>
       // get the ingredient name
       val fromIndex = longString lastIndexOf "from"
       val onlyIngredient = longString.substring(0, fromIndex).trim
@@ -101,7 +103,7 @@ class ChefParser extends RegexParsers {
 
   /* Parses a Put line */
   def putLine: Parser[ChefLine] = 
-    "Put " ~> """[A-Za-z- _]+ *into *mixing *bowl""".r ~ number.? ^^ {
+    "Put " ~> """[A-Za-z- _]+ *into *mixing *bowl""".r ~ number.? <~ "." ^^ {
       case longString ~ None =>
         Push(getIngredient(longString, "into"), 1)
       case longString ~ Some(bowl) =>
@@ -110,7 +112,7 @@ class ChefParser extends RegexParsers {
 
   /* Parses a Fold line */
   def foldLine: Parser[ChefLine] = 
-    "Fold " ~> """[A-Za-z- _]+ *into *mixing *bowl""".r ~ number.? ^^ {
+    "Fold " ~> """[A-Za-z- _]+ *into *mixing *bowl""".r ~ number.? <~ "." ^^ {
       case longString ~ None =>
         Pop(1, getIngredient(longString, "into"))
       case longString ~ Some(bowl) =>
@@ -119,7 +121,7 @@ class ChefParser extends RegexParsers {
 
   /* Parses an Add line */
   def addLine: Parser[ChefLine] = 
-    "Add " ~> """[A-Za-z- _]+ *to *mixing *bowl""".r ~ number.? ^^ {
+    "Add " ~> """[A-Za-z- _]+ *to *mixing *bowl""".r ~ number.? <~ "." ^^ {
       case longString ~ None =>
         Add(getIngredient(longString, "to"), 1)
       case longString ~ Some(bowl) =>
@@ -128,13 +130,13 @@ class ChefParser extends RegexParsers {
 
   /* Parses an Add line variant */
   def addLine2: Parser[ChefLine] = 
-    "Add " ~> """[A-Za-z- _]+""".r ^^ { x =>
+    "Add " ~> """[A-Za-z- _]+""".r <~ "." ^^ { x =>
       Add(x.trim, 1)
     }
 
   /* Parses a Remove line */
   def removeLine: Parser[ChefLine] = 
-    "Remove " ~> """[A-Za-z- _]+ *from *mixing *bowl""".r ~ number.? ^^ {
+    "Remove " ~> """[A-Za-z- _]+ *from *mixing *bowl""".r ~ number.? <~ "." ^^ {
       case longString ~ None =>
         Subtract(getIngredient(longString, "from"), 1)
       case longString ~ Some(bowl) =>
@@ -143,13 +145,13 @@ class ChefParser extends RegexParsers {
 
   /* Parses a Remove line variant */
   def removeLine2: Parser[ChefLine] = 
-    "Remove " ~> """[A-Za-z- _]+""".r ^^ { x =>
+    "Remove " ~> """[A-Za-z- _]+""".r <~ "." ^^ { x =>
       Subtract(x.trim, 1)
     }
 
   /* Parses a Combine line */
   def combineLine: Parser[ChefLine] = 
-    "Combine " ~> """[A-Za-z- _]+ *into *mixing *bowl""".r ~ number.? ^^ {
+    "Combine " ~> """[A-Za-z- _]+ *into *mixing *bowl""".r ~ number.? <~ "." ^^ {
       case longString ~ None =>
         Multiply(getIngredient(longString, "into"), 1)
       case longString ~ Some(bowl) =>
@@ -158,13 +160,13 @@ class ChefParser extends RegexParsers {
 
   /* Parses a Combine line variant */
   def combineLine2: Parser[ChefLine] = 
-    "Combine " ~> """[A-Za-z- _]+""".r ^^ { x =>
+    "Combine " ~> """[A-Za-z- _]+""".r <~ "." ^^ { x =>
       Multiply(x.trim, 1)
     }
 
   /* Parses a Divide line */
   def divideLine: Parser[ChefLine] = 
-    "Divide " ~> """[A-Za-z- _]+ *into *mixing *bowl""".r ~ number.? ^^ {
+    "Divide " ~> """[A-Za-z- _]+ *into *mixing *bowl""".r ~ number.? <~ "." ^^ {
       case longString ~ None =>
         Divide(getIngredient(longString, "into"), 1)
       case longString ~ Some(bowl) =>
@@ -173,9 +175,20 @@ class ChefParser extends RegexParsers {
 
   /* Parses a Divide line variant */
   def divideLine2: Parser[ChefLine] = 
-    "Divide " ~> """[A-Za-z- _]+""".r ^^ { x =>
+    "Divide " ~> """[A-Za-z- _]+""".r <~ "." ^^ { x =>
       Divide(x.trim, 1)
     }
+
+  /* Parse add dry line with optional mixing bowl */
+  def addDryLine: Parser[ChefLine] = 
+    """Add *dry *ingredients *to *mixing *bowl""".r ~> number.? <~ "." ^^ {
+      case None => println("adklfj");AddDry(1)
+      case Some(bowl) => AddDry(bowl)
+    }
+
+  /* Parse add dry line with no optional mixing bowl */
+  def addDryLine2: Parser[ChefLine] = 
+    """Add *dry *ingredients""".r <~ "." ^^ { _ => println("here");AddDry(1) }
 
   /* Parses the final serves statement in a recipe */
   def serves: Parser[Int] = 
