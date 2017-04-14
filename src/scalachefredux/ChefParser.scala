@@ -95,7 +95,8 @@ class ChefParser extends RegexParsers {
     stirIngredientLine | stirIngredientLine2 |
     mixLine | mixBowlLine | mixBowlLine2 | cleanLine |
     pourLine | pourLine2 | pourLine3 | pourLine4 |
-    verbEndLine2 | verbEndLine | verbLine ) <~ """[\n]*""".r
+    verbEndLine2 | verbEndLine | verbLine |
+    setLine | serveLine ) <~ """[\n]*""".r
 
   /* Parses a Take line */
   def takeLine: Parser[ChefLine] =
@@ -298,6 +299,20 @@ class ChefParser extends RegexParsers {
   def verbEndLine2: Parser[ChefLine] =
     """[A-Za-z-_]+ +until""".r ~> ("""[A-Za-z-_]+""".r <~ ".") ^^ {
       v => LoopEnd(v.toLowerCase, "", -1)
+    }
+
+  /* Parse a set aside line */
+  def setLine: Parser[ChefLine] =
+    """Set +aside *.""".r ^^ { _ => Break(-1) }
+
+  /* Parse a Serve line */
+  def serveLine: Parser[ChefLine] = 
+    """Serve +with """.r ~> """[A-Za-z0-9-_. ]+ *.""".r ^^ {
+      r_name => 
+        println(r_name)
+        val x = r_name.substring(0, r_name.length - 1).trim
+        println(x)
+        Call(x)
     }
 
   /* Parses the final serves statement in a recipe */
