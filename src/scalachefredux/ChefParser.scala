@@ -96,7 +96,7 @@ class ChefParser extends RegexParsers {
     mixLine | mixBowlLine | mixBowlLine2 | cleanLine |
     pourLine | pourLine2 | pourLine3 | pourLine4 |
     verbEndLine2 | verbEndLine | verbLine |
-    setLine | serveLine ) <~ """[\n]*""".r
+    setLine | serveLine | refrigerateLine | refrigerateLine2 ) <~ """[\n]*""".r
 
   /* Parses a Take line */
   def takeLine: Parser[ChefLine] =
@@ -313,6 +313,16 @@ class ChefParser extends RegexParsers {
         val x = r_name.substring(0, r_name.length - 1).trim
         println(x)
         Call(x)
+    }
+
+  /* Parse a refrigerate line */
+  def refrigerateLine: Parser[ChefLine] =
+    """Refrigerate *\.""".r ^^ { _ => Return(-1) }
+
+  /* Parse refrigerate with an hour specification */
+  def refrigerateLine2: Parser[ChefLine] =
+    """Refrigerate +for""".r ~> number <~ "hours" <~ "." ^^ { 
+      hour => Return(hour) 
     }
 
   /* Parses the final serves statement in a recipe */
