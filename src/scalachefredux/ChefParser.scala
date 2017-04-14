@@ -36,12 +36,12 @@ class ChefParser extends RegexParsers {
   
   /* Parses a title; drop the period at the end */
   def chefTitle: Parser[String] = 
-    """[A-Za-z0-9-_. ]+\.""".r <~ newLine ^^ 
+    """[A-Za-z0-9-_,\. ]+\.""".r <~ newLine ^^ 
     { x => x.substring(0, x.length - 1) }
 
   /* Parse comments that follow a title */
   def comments: Parser[String] = 
-    """[A-Za-z0-9-_ .?!\"]*""".r <~ newLine
+    """[A-Za-z0-9-_ \.?!\"]*""".r <~ newLine
 
   /* Parses a number and returns a number */
   def number: Parser[Int] = 
@@ -132,7 +132,7 @@ class ChefParser extends RegexParsers {
 
   /* Parses a Chef statement */
   def chefLine: Parser[ChefLine] = 
-    (takeLine | putLine | foldLine | 
+    (takeLine | putLine | putLine2 | foldLine | foldLine2 | 
     addDryLine | addDryLine2 |
     addLine | addLine2 | removeLine | removeLine2 |
     combineLine | combineLine2 | divideLine | divideLine2 |
@@ -161,6 +161,11 @@ class ChefParser extends RegexParsers {
       case longString ~ Some(bowl) =>
         Push(getIngredient(longString, "into"), bowl)
     }
+  /* Parses a Put line variant */
+  def putLine2: Parser[ChefLine] = 
+    "Put " ~> """[A-Za-z- _]+ +into +the +mixing +bowl""".r <~ "." ^^ {
+      longString => Push(getIngredient(longString, "into"), 1)
+    }
 
   /* Parses a Fold line */
   def foldLine: Parser[ChefLine] = 
@@ -169,6 +174,12 @@ class ChefParser extends RegexParsers {
         Pop(1, getIngredient(longString, "into"))
       case longString ~ Some(bowl) =>
         Pop(bowl, getIngredient(longString, "into"))
+    }
+
+  /* Parses a fold line variant */
+  def foldLine2: Parser[ChefLine] = 
+    "Fold " ~> """[A-Za-z- _]+ +into +the +mixing +bowl""".r <~ "." ^^ {
+      longString => Pop(1, getIngredient(longString, "into"))
     }
 
   /* Parses an Add line */
