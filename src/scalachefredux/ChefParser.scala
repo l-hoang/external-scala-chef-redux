@@ -44,7 +44,7 @@ class ChefParser extends RegexParsers {
 
   /* Parses the ingredient declaration */
   def ingredientDecl: Parser[String] =
-    """Ingredients.""" <~ newLine
+    "Ingredients." <~ newLine
 
   /* Parses an ingredient */
   def ingredient: Parser[String] = 
@@ -82,7 +82,7 @@ class ChefParser extends RegexParsers {
 
   /* Parses the method declaration */
   def methodDecl: Parser[String] = 
-    """Method.""" <~ newLine
+    "Method." <~ newLine
 
   /* Parses a Chef statement */
   def chefLine: Parser[ChefLine] = 
@@ -303,11 +303,11 @@ class ChefParser extends RegexParsers {
 
   /* Parse a set aside line */
   def setLine: Parser[ChefLine] =
-    """Set +aside *.""".r ^^ { _ => Break(-1) }
+    """Set +aside *\.""".r ^^ { _ => Break(-1) }
 
   /* Parse a Serve line */
   def serveLine: Parser[ChefLine] = 
-    """Serve +with """.r ~> """[A-Za-z0-9-_. ]+ *.""".r ^^ {
+    """Serve +with """.r ~> """[A-Za-z0-9-_. ]+ *\.""".r ^^ {
       r_name => 
         println(r_name)
         val x = r_name.substring(0, r_name.length - 1).trim
