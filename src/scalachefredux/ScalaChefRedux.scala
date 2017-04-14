@@ -16,5 +16,14 @@ object ScalaChefRedux {
 
     println(result)
 
+    println((result.get)(0).recipeName)
+
+    for (i <- result.get(0).ingredients) {
+      println("Ing")
+      println(i.ingredientName)
+      println(i.getInterpretation)
+    }
+
+    println((result.get)(0).lines)
   }
 }

@@ -13,21 +13,24 @@ class ChefParser extends RegexParsers {
   // considered whitespace
   override val whiteSpace = "[ \t\r\f]+".r
 
-  def chefProgram: Parser[String] =
-    chefRecipe.+ ^^ { case x => "prog " + x + "\n"  }
+  def chefProgram: Parser[List[ChefResult]] =
+    chefRecipe.+
 
   /* Parses a single recipe */
-  def chefRecipe: Parser[String] = 
-    ((chefTitle <~ (comments.?)) <~ 
-    ingredientDecl) ~
-    (ingredient.* <~
-    (cookingTime.? <~
-    ovenTemp.? <~
-    methodDecl)) ~
+  def chefRecipe: Parser[ChefResult] = 
+    (chefTitle <~ (comments.?)) ~ 
+    (ingredientList.? <~ (cookingTime.? <~ ovenTemp.? <~ methodDecl)) ~
     chefLine.+ ~
-    serves.? ^^
-    { case _title ~ _ingredients ~ _lines ~ _serves => _title + _ingredients +
-      _lines + _serves + "\n"}
+    serves.? ^^ { 
+      case _title ~ None ~ _lines ~ None => 
+        new ChefResult(_title, List(), _lines)
+      case _title ~ Some(_ingredients) ~ _lines ~ None => 
+        new ChefResult(_title, _ingredients, _lines)
+      case _title ~ None ~ _lines ~ Some(x) => 
+        new ChefResult(_title, List(), _lines :+ x)
+      case _title ~ Some(_ingredients) ~ _lines ~ Some(x) => 
+        new ChefResult(_title, _ingredients, _lines :+ x)
+    }
   
   /* Parses a title; drop the period at the end */
   def chefTitle: Parser[String] = 
@@ -42,21 +45,62 @@ class ChefParser extends RegexParsers {
   def number: Parser[Int] = 
     """[0-9]+""".r ^^ { _.toInt }
 
+  /* Parses ingredient declaration + list */
+  def ingredientList: Parser[List[ChefIngredient]] =
+    ingredientDecl ~> ingredient.+
+
   /* Parses the ingredient declaration */
   def ingredientDecl: Parser[String] =
     "Ingredients." <~ newLine
 
   /* Parses an ingredient */
-  def ingredient: Parser[String] = 
+  def ingredient: Parser[ChefIngredient] = 
     number.? ~ measure.? ~ """[A-Za-z- _]+""".r <~ """[\n]+""".r ^^
-    { case None ~ None ~ _name => "name only " + _name
-      case None ~ Some(y) ~ _name => "no num " + "meaure " + y + " " + _name
-      case Some(x) ~ None ~ _name => "num " + x + " " + _name
-      case Some(x) ~ Some(y) ~ _name => x + " measure " + y + " " + _name }
+    { case None ~ None ~ _name => 
+        new ChefIngredient(_name, I_EITHER)
+      case None ~ Some(y) ~ _name => 
+        if ((y startsWith "heaped") || (y startsWith "level")) {
+          // always dry
+          new ChefIngredient(_name, I_DRY)
+        } else {
+          // otherwise, the string is just the measure: 
+          // check for other things...
+          y match {
+            case "g" | "kg" | "pinch" | "pinches" =>
+              new ChefIngredient(_name, I_DRY)
+            case "ml" | "l" | "dash" | "dashes" =>
+              new ChefIngredient(_name, I_LIQUID)
+            case "cup" | "cups" | "teaspoon" | "teaspoons" | "tablespoons" |
+             "tablespoon" =>
+              new ChefIngredient(_name, I_EITHER)
+            case _ => throw new RuntimeException("bad measure")
+          }
+        }
+      case Some(x) ~ None ~ _name => 
+        new ChefIngredient(_name, I_EITHER, x)
+      case Some(x) ~ Some(y) ~ _name => 
+        if ((y startsWith "heaped") || (y startsWith "level")) {
+          // always dry
+          new ChefIngredient(_name, I_DRY, x)
+        } else {
+          // otherwise, the string is just the measure: 
+          // check for other things...
+          y match {
+            case "g" | "kg" | "pinch" | "pinches" =>
+              new ChefIngredient(_name, I_DRY, x)
+            case "ml" | "l" | "dash" | "dashes" =>
+              new ChefIngredient(_name, I_LIQUID, x)
+            case "cup" | "cups" | "teaspoon" | "teaspoons" | "tablespoons" |
+             "tablespoon" =>
+              new ChefIngredient(_name, I_EITHER, x)
+            case _ => throw new RuntimeException("bad measure")
+          }
+        }
+    }
 
   /* Parses heaped/level */
   def heapedLevel: Parser[String] =
-    ("heaped" | "level") ^^ {x => x}
+    ("heaped" | "level")
 
   /* Parses a measure, which may include an option heaped/level */
   def measure: Parser[String] = 

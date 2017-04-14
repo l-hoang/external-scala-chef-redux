@@ -32,8 +32,12 @@ import scala.collection.mutable.HashMap
 import java.util.ArrayDeque
 
 /* Holds the results of the parse of a single Chef recipe */
-class ParseResult {
+class ChefResult(_recipeName: String, _ingredients: List[ChefIngredient], 
+                  _lines: List[ChefLine])  {
 
+  def recipeName = _recipeName
+  def ingredients = _ingredients
+  def lines = _lines
 }
 
 class ChefIngredient(name: String, interpretation: IState, initValue: Int = -1, 
