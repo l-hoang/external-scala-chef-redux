@@ -14,11 +14,13 @@ class ChefParser extends RegexParsers {
   override val whiteSpace = "[ \t\r\f]+".r
 
   def chefProgram: Parser[List[ChefResult]] =
-    chefRecipe.+
+    chefRecipe ~ (newLine ~> chefRecipe).* ^^ {
+      case r ~ l => r :: l
+    }
 
   /* Parses a single recipe */
   def chefRecipe: Parser[ChefResult] = 
-    (chefTitle <~ (comments.?)) ~ 
+    (chefTitle <~ (comments)) ~ 
     (ingredientList.? <~ (cookingTime.? <~ ovenTemp.? <~ methodDecl)) ~
     chefLine.+ ~
     serves.? ^^ { 
@@ -34,12 +36,12 @@ class ChefParser extends RegexParsers {
   
   /* Parses a title; drop the period at the end */
   def chefTitle: Parser[String] = 
-    """[A-Za-z0-9-_. ]+[.]""".r <~ newLine ^^ 
+    """[A-Za-z0-9-_. ]+\.""".r <~ newLine ^^ 
     { x => x.substring(0, x.length - 1) }
 
   /* Parse comments that follow a title */
   def comments: Parser[String] = 
-    """[A-Za-z0-9-_. ]*""".r <~ newLine
+    """[A-Za-z0-9-_ .?!\"]*""".r <~ newLine
 
   /* Parses a number and returns a number */
   def number: Parser[Int] = 
@@ -371,7 +373,7 @@ class ChefParser extends RegexParsers {
 
   /* Parses the final serves statement in a recipe */
   def serves: Parser[ChefLine] = 
-    """Serves """ ~> number <~ "." <~ newLine ^^ { num => PrintStacks(num) }
+    """Serves """ ~> number <~ "." ^^ { num => PrintStacks(num) }
 
   /* Deal with new lines, i.e. require 1 at least */
   def newLine: Parser[String] = 

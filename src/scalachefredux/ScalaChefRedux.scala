@@ -14,16 +14,35 @@ object ScalaChefRedux {
 
     val result = parser.parse(parser.chefProgram, chef_text)
 
-    println(result)
+    println(result);
 
-    println((result.get)(0).recipeName)
+    var first = false
 
-    for (i <- result.get(0).ingredients) {
-      println("Ing")
-      println(i.ingredientName)
-      println(i.getInterpretation)
+    for (recipeInfo <- result.get) {
+      // start a new function in metadata
+      val recipeName = recipeInfo.recipeName
+      chefText functionStart recipeName
+      
+      if (!first) {
+        chefState setMainRecipe recipeName
+        first = true
+      }
+
+      // save ingredients
+      for (i <- recipeInfo.ingredients) {
+        chefText addIngredient i
+      }
+
+      for (line <- recipeInfo.lines) {
+        //println(line)
+        chefText addLine line
+      }
     }
 
-    println((result.get)(0).lines)
+    chefText.endFunction
+    chefText.consistencyCheck
+
+    val runner = new ChefRunner(chefState, chefText)
+    runner.run
   }
 }
