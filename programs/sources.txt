@@ -1,0 +1,3 @@
+Hello World taken from original Chef site.
+Fibonacci from Chef site as well, but modified as it didn't work.
+Guessing Game from original Scala Chef.
