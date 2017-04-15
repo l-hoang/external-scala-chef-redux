@@ -14,14 +14,18 @@ object ScalaChefRedux {
 
     val result = parser.parse(parser.chefProgram, chef_text)
 
-    println(result);
+    println("Parse result: " + result);
 
     var first = false
+
+    //println(result.get)
 
     for (recipeInfo <- result.get) {
       // start a new function in metadata
       val recipeName = recipeInfo.recipeName
       chefText functionStart recipeName
+
+      //println("NAME: " + recipeName)
       
       if (!first) {
         chefState setMainRecipe recipeName
@@ -30,14 +34,17 @@ object ScalaChefRedux {
 
       // save ingredients
       for (i <- recipeInfo.ingredients) {
+        //println("Ingredient: "i.ingredientName)
         chefText addIngredient i
       }
 
       for (line <- recipeInfo.lines) {
-        println(line)
+        //println("Line: " +line)
         chefText addLine line
       }
     }
+
+    //println("out of loop, going to begin execution")
 
     chefText.endFunction
     chefText.consistencyCheck

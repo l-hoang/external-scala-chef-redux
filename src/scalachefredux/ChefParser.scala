@@ -131,7 +131,7 @@ class ChefParser extends RegexParsers {
 
   /* Parses the method declaration */
   def methodDecl: Parser[String] = 
-    """^(Method\.)""".r <~ newLine
+    """^(Method\.)""".r <~ """[\n]+""".r
 
   /* Parses a Chef statement */
   def chefLine: Parser[ChefLine] = 
@@ -142,7 +142,7 @@ class ChefParser extends RegexParsers {
     combineLine | combineLineT | combineLine2 | 
     divideLine | divideLineT | divideLine2 |
     liquefyContentsLine | liquefyContentsLine2 | liquefyLine |
-    stirBowlLine | stirBowlLine2 |
+    stirBowlLine | stirBowlLine2 | stirBowlLine3 |
     stirIngredientLine | stirIngredientLine2 |
     mixLine | mixBowlLine | mixBowlLine2 | cleanLine | cleanLineT |
     pourLine | pourLine2 | pourLine3 | pourLine4 |
@@ -333,6 +333,12 @@ class ChefParser extends RegexParsers {
       minutes => Stir(minutes, 1)
     }
 
+  /* Parse stir without bowl */
+  def stirBowlLine3: Parser[ChefLine] = 
+    """Stir +for""".r ~> number <~ "minutes" <~ "." ^^ {
+      minutes => Stir(minutes, 1)
+    }
+
   /* Parse a stir ingredient line */
   def stirIngredientLine: Parser[ChefLine] = 
     "Stir " ~> """[A-Za-z- _]+ +into +the +mixing +bowl""".r <~ "." ^^ {
@@ -421,9 +427,9 @@ class ChefParser extends RegexParsers {
   def serveLine: Parser[ChefLine] = 
     """Serve +with """.r ~> """[A-Za-z0-9-_. ]+ *\.""".r ^^ {
       r_name => 
-        println(r_name)
+        //println(r_name)
         val x = r_name.substring(0, r_name.length - 1).trim
-        println(x)
+        //println(x)
         Call(x)
     }
 
