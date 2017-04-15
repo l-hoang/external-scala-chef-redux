@@ -36,7 +36,7 @@ class ChefParser extends RegexParsers {
   
   /* Parses a title; drop the period at the end */
   def chefTitle: Parser[String] = 
-    """[A-Za-z0-9-_,\. ]+\.""".r <~ newLine ^^ 
+    """^([A-Za-z0-9-_,\. ]+\.)""".r <~ newLine ^^ 
     { x => x.substring(0, x.length - 1) }
 
   /* Parse comments that follow a title */
@@ -53,7 +53,7 @@ class ChefParser extends RegexParsers {
 
   /* Parses the ingredient declaration */
   def ingredientDecl: Parser[String] =
-    "Ingredients." <~ newLine
+    """^(Ingredients\.)""".r <~ """[\n]+""".r
 
   /* Parses an ingredient */
   def ingredient: Parser[ChefIngredient] = 
@@ -102,20 +102,23 @@ class ChefParser extends RegexParsers {
 
   /* Parses heaped/level */
   def heapedLevel: Parser[String] =
-    ("heaped" | "level")
+    ("""\bheaped\b""".r | """\blevel\b""".r)
 
   /* Parses a measure, which may include an option heaped/level */
   def measure: Parser[String] = 
-    heapedLevel.? ~ ("kg" | "g" | "pinches" | "pinch" | "ml" | "l" | "dashes" | 
-    "dash" | "cups" | "cup" | "teaspoons" | "teaspoon" | "tablespoons" | 
-    "tablespoon") ^^
+    heapedLevel.? ~ ("""\bkg\b""".r | """\bg\b""".r | """\bpinches\b""".r | 
+    """\bpinch\b""".r | """\bml\b""".r | """\bl\b""".r | """\bdashes\b""".r | 
+    """\bdash\b""".r | """\bcups\b""".r | """\bcup\b""".r | 
+    """\bteaspoons\b""".r | """\bteaspoon\b""".r | """\btablespoons\b""".r | 
+    """\btablespoon\b""".r) ^^
     { case None ~ _measure => _measure
       case Some(h) ~ _measure => h + " " + _measure }
   
   /* Parses cooking time */
   def cookingTime: Parser[String] = 
     "Cooking time: " <~ """[0-9]+""".r <~ 
-    ("hours" | "hour" | "minutes" | "minute").? <~ "." <~ newLine
+    ("""\bhours\b""".r | """\bhour\b""".r | """\bminutes\b""".r | 
+    """\bminute\b""".r).? <~ "." <~ newLine
 
   /* Parses the oven temperature */
   def ovenTemp: Parser[String] =
@@ -128,11 +131,11 @@ class ChefParser extends RegexParsers {
 
   /* Parses the method declaration */
   def methodDecl: Parser[String] = 
-    "Method." <~ newLine
+    """^(Method\.)""".r <~ newLine
 
   /* Parses a Chef statement */
   def chefLine: Parser[ChefLine] = 
-    (takeLine | putLine | putLine2 | foldLine | foldLine2 | 
+    (takeLine | takeLineT | putLine | putLine2 | foldLine | foldLine2 | 
     addDryLine | addDryLineT | addDryLine2 |
     addLine | addLineT | addLine2 | 
     removeLine | removeLineT | removeLine2 |
@@ -144,11 +147,21 @@ class ChefParser extends RegexParsers {
     mixLine | mixBowlLine | mixBowlLine2 | cleanLine | cleanLineT |
     pourLine | pourLine2 | pourLine3 | pourLine4 |
     verbEndLine2 | verbEndLine | verbLine |
-    setLine | serveLine | refrigerateLine | refrigerateLine2 ) <~ """[\n]*""".r
+    setLine | serveLine | 
+    refrigerateLine | refrigerateLine2 | refrigerateLine3 ) <~ """[\n]?""".r
 
   /* Parses a Take line */
   def takeLine: Parser[ChefLine] =
     "Take " ~> """[A-Za-z- _]+ +from +refrigerator""".r <~ "." ^^ { longString =>
+      // get the ingredient name
+      val fromIndex = longString lastIndexOf "from"
+      val onlyIngredient = longString.substring(0, fromIndex).trim
+      Read(onlyIngredient)
+   }
+
+  /* Parses a Take line, the */
+  def takeLineT: Parser[ChefLine] =
+    "Take " ~> """[A-Za-z- _]+ +from +the +refrigerator""".r <~ "." ^^ { longString =>
       // get the ingredient name
       val fromIndex = longString lastIndexOf "from"
       val onlyIngredient = longString.substring(0, fromIndex).trim
@@ -421,7 +434,22 @@ class ChefParser extends RegexParsers {
   /* Parse refrigerate with an hour specification */
   def refrigerateLine2: Parser[ChefLine] =
     """Refrigerate +for""".r ~> number <~ "hours" <~ "." ^^ { 
-      hour => Return(hour) 
+      hour => 
+        if (hour <= 1) {
+          throw new RuntimeException("hours need to be more than 1")
+        }
+        Return(hour) 
+    }
+
+  /* Parse refrigerate with an hour specification */
+  def refrigerateLine3: Parser[ChefLine] =
+    """Refrigerate +for""".r ~> number <~ "hour" <~ "." ^^ { 
+      hour => 
+        if (hour != 1) {
+          throw new RuntimeException("hour needs to be 1")
+        }
+
+        Return(hour) 
     }
 
   /* Parses the final serves statement in a recipe */
