@@ -34,7 +34,7 @@ object ScalaChefRedux {
       }
 
       for (line <- recipeInfo.lines) {
-        //println(line)
+        println(line)
         chefText addLine line
       }
     }
