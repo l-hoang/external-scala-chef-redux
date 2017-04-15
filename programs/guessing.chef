@@ -1,0 +1,151 @@
+Guessing Salad with Prompt Pudding, More, Less, and Equal.
+
+Main method.
+
+Ingredients.
+
+100 random ingredients
+1 secret ingredient
+1 true
+0 false
+1 result
+1 greater
+1 less
+1 equal
+
+Method. 
+
+Amass the random ingredients. Put random ingredients into the mixing bowl.
+Amass the random ingredients until amassed.
+Mix well. Fold secret ingredient into the mixing bowl.
+Clean the mixing bowl.
+Guess the secret ingredient.
+  Put false into mixing bowl 2.
+  Fold equal into mixing bowl 2.
+  Put false into mixing bowl 2.
+  Fold greater into mixing bowl 2.
+  Put true into mixing bowl 2.
+  Fold less into mixing bowl 2.
+  Serve with Prompt Pudding.
+  Take guess from the refrigerator.
+  Put secret ingredient into mixing bowl 2.
+  Divide guess into mixing bowl 2.
+  Fold result into mixing bowl 2.
+  Check the result.
+    Put false into mixing bowl 2.
+    Fold less into mixing bowl 2.
+    Put true into mixing bowl 2.
+    Fold equal into mixing bowl 2.
+    Put guess into mixing bowl 2.
+    Remove secret ingredient from mixing bowl 2.
+    Fold result into mixing bowl 2.
+    Equalize the result.
+      Put false into mixing bowl 2.
+      Fold equal into mixing bowl 2.
+      Put true into mixing bowl 2.
+      Fold greater into mixing bowl 2.
+      Set aside.
+    Equalize until equalized.
+    Set aside.
+  Check until checked.
+  Lower the less.
+    Serve with More.
+    Set aside.
+  Lower until lowered.
+  Max the greater.
+    Serve with Less.
+    Set aside.
+  Max until maxed.
+  Level the equal.
+    Put false into mixing bowl 2.
+    Fold secret ingredient into mixing bowl 2.
+    Serve with Equal.
+    Set aside.
+  Level until leveled.
+Guess until guessed.
+Serves 1.
+
+
+Prompt Pudding.
+
+Prints the prompt.
+
+Ingredients.
+
+103 g white sugar
+117 eggs
+101 cups corn starch
+115 cups milk
+58 bananas
+
+Method.
+
+Clean the mixing bowl.
+Put bananas into the mixing bowl.
+Put milk into the mixing bowl.
+Put milk into the mixing bowl.
+Put corn starch into the mixing bowl.
+Put eggs into the mixing bowl.
+Put white sugar into the mixing bowl.
+Liquefy contents of the mixing bowl.
+Pour contents of the mixing bowl into the baking dish. 
+Refrigerate for 1 hour.
+
+
+More.
+
+Called on more.
+
+Ingredients.
+10 nl
+62 up
+
+Method.
+
+Clean the mixing bowl.
+Put nl into the mixing bowl.
+Put up into the mixing bowl.
+Liquefy contents of the mixing bowl.
+Pour contents of the mixing bowl into the baking dish. 
+Refrigerate for 1 hour.
+
+
+
+
+
+Less.
+
+Called on less.
+
+Ingredients.
+10 nl
+60 down
+
+Method.
+
+Clean the mixing bowl.
+Put nl into the mixing bowl.
+Put down into the mixing bowl.
+Liquefy contents of the mixing bowl.
+Pour contents of the mixing bowl into the baking dish. 
+Refrigerate for 1 hour.
+
+
+
+
+Equal.
+
+Called on equal.
+
+Ingredients.
+10 nl
+61 eq
+
+Method.
+
+Clean the mixing bowl.
+Put nl into the mixing bowl.
+Put eq into the mixing bowl.
+Liquefy contents of the mixing bowl.
+Pour contents of the mixing bowl into the baking dish. 
+Refrigerate for 1 hour.
