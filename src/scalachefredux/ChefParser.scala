@@ -133,13 +133,15 @@ class ChefParser extends RegexParsers {
   /* Parses a Chef statement */
   def chefLine: Parser[ChefLine] = 
     (takeLine | putLine | putLine2 | foldLine | foldLine2 | 
-    addDryLine | addDryLine2 |
-    addLine | addLineT | addLine2 | removeLine | removeLineT | removeLine2 |
-    combineLine | combineLineT | combineLine2 | divideLine | divideLineT | divideLine2 |
+    addDryLine | addDryLineT | addDryLine2 |
+    addLine | addLineT | addLine2 | 
+    removeLine | removeLineT | removeLine2 |
+    combineLine | combineLineT | combineLine2 | 
+    divideLine | divideLineT | divideLine2 |
     liquefyContentsLine | liquefyContentsLine2 | liquefyLine |
     stirBowlLine | stirBowlLine2 |
     stirIngredientLine | stirIngredientLine2 |
-    mixLine | mixBowlLine | mixBowlLine2 | cleanLine |
+    mixLine | mixBowlLine | mixBowlLine2 | cleanLine | cleanLineT |
     pourLine | pourLine2 | pourLine3 | pourLine4 |
     verbEndLine2 | verbEndLine | verbLine |
     setLine | serveLine | refrigerateLine | refrigerateLine2 ) <~ """[\n]*""".r
@@ -277,6 +279,12 @@ class ChefParser extends RegexParsers {
       case Some(bowl) => AddDry(bowl)
     }
 
+  /* Parse add dry line, the */
+  def addDryLineT: Parser[ChefLine] = 
+    """Add +dry +ingredients +to +the +mixing +bowl""".r <~ "." ^^ {
+      _ => AddDry(1)
+    }
+
   /* Parse add dry line with no optional mixing bowl */
   def addDryLine2: Parser[ChefLine] = 
     """Add +dry +ingredients""".r <~ "." ^^ { _ => AddDry(1) }
@@ -344,6 +352,12 @@ class ChefParser extends RegexParsers {
     """Clean +mixing +bowl""".r ~> (number.? <~ ".") ^^ {
       case None => ClearStack(1)
       case Some(bowl) => ClearStack(bowl)
+    }
+
+  /* Parse a clean line, the */
+  def cleanLineT: Parser[ChefLine] = 
+    """Clean +the +mixing +bowl""".r <~ "." ^^ {
+      _ => ClearStack(1)
     }
 
   /* 4 different variants of pour line based on which optional things

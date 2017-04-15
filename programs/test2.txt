@@ -19,5 +19,6 @@ Method.
 Put eggs into the mixing bowl.
 Add eggs to the mixing bowl.  Remove eggs from the mixing bowl. 
 Combine eggs into the mixing bowl. Divide eggs into the mixing bowl.
+Add dry ingredients to the mixing bowl. Clean the mixing bowl.
 
 Serves 1.
