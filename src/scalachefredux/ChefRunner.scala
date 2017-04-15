@@ -127,15 +127,20 @@ class ChefRunner(state: ChefState, text: ChefText) {
       // and restore state
       if (returned || (!functionEndLineStack.isEmpty && 
           currentLine == functionEndLineStack.head)) {
-        // restore program state
-        programState.contextReturn
+        if (inFunction) {
+          // restore program state
+          programState.contextReturn
 
-        functionEndLineStack remove 0
-        if (functionEndLineStack.isEmpty) {
-          inFunction = false
+          functionEndLineStack remove 0
+          if (functionEndLineStack.isEmpty) {
+            inFunction = false
+          }
+          // return to line to continue execution at
+          currentLine = returnStack remove 0
+        } else {
+          // end execution
+          currentLine = mainLastLine
         }
-        // return to line to continue execution at
-        currentLine = returnStack remove 0
       }
     }
   }
