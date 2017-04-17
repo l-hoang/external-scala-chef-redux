@@ -125,7 +125,8 @@ with the parsing combinator version.
 Regex is used with the parsing combinators to do parsing of the Chef program.
 
 **For more details on how it works, see the `ChefParser` file where I have
-extensively commented on how it works + what I am doing.**
+extensively commented on how it works + what I am doing. Also see the 
+`ScalaChefRedux` file for an idea of how I integrate the `ChefParser`.**
 
 Here are some helpful sources on these parsing combinators and how to use them.
 
