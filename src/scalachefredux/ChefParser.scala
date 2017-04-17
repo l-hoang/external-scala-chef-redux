@@ -7,7 +7,7 @@ import scala.language.implicitConversions
  * Good source here:
  * https://enear.github.io/2016/03/31/parser-combinators/
  **/
-class ChefParser extends RegexParsers {
+object ChefParser extends RegexParsers {
   // This tells the parser to ignore whitespace when MOVING BETWEEN PARSER
   // COMBINATORS. Whitespace will NOT be ignored when actually in the parsing
   // rule.
@@ -112,10 +112,10 @@ class ChefParser extends RegexParsers {
     measure.? ~ 
     // Parse the ingredient name, which consists of alpha-numberic 
     // characters and possibly spaces/symbols.
-    """[A-Za-z- _]+""".r 
+    """[A-Za-z- _]+""".r  <~
     // The use of <~ means the new line characters parsed by this will
     // not appear in the output.
-    <~ """[\n]+""".r ^^ { 
+    """[\n]+""".r ^^ { 
       // There are different cases depending on the success of parsing
       // the optional number/measure
 

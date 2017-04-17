@@ -4,7 +4,7 @@ import scala.language.implicitConversions
 
 object ScalaChefRedux {
   def main(args: Array[String]) {
-    val parser = new ChefParser
+    val parser = ChefParser
     val chefText = new ChefText
     val chefState = new ChefState
 
