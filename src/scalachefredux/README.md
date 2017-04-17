@@ -122,7 +122,7 @@ You can add more power to your combinator by using `~`, `~>`, `<~` and other
 operators. Additionally, you can use parser combinators within other parser
 combinators to form more powerful combinators.
 
-## `~`: Chaining Parse Strings
+### `~`: Chaining Parse Strings
 
 `~` allows you to chain together different things that you want to parse.
 
@@ -159,9 +159,194 @@ def testParser: Parser[Start] =
       d + " " + t + " " + r
 ```
 
-Note that not all arguments need to be used.
+Note that not all arguments need to be used: regardless, for each argument
+that is passed into the transformation, the case statement must have a "slot"
+for it.
 
-## Combinators in Combinators
+### `~>` and `<~`: Parse and Ignore
+
+In some cases, you want to parse something, but you do not want to have it
+passed into output. This is where `~>` and `<~` are useful:
+
+```
+def testParser: Parser[Start] = 
+  "do" ~> "this"
+```
+
+This will still parse "do" and "this". However, the final output result is 
+only going to be "this" as the result of parsing "do" is ignored due
+to `~>`, which says that you ignore the result on the left and take the one
+on the right.
+
+Similarly, `<~` ignores the result on the right and takes the one of the left.
+The below parser will parse the same thing as the above, except it only 
+returns "do".
+
+```
+def testParser: Parser[Start] = 
+  "do" <~ "this"
+```
+
+You can use this in conjuction with `~`.
+
+```
+def testParser: Parser[Start] = 
+  ("do" ~> "this") ~ ("task" <~ "right") ^^ {
+    case t ~ ta => t + " " + ta
+```
+
+**You should parenthesize your "main" results along with the ignored
+results**. Here, the ignored "do" corresponds with "this", which **isn't**
+ignored, and the ignored "right" is grouped with "task". Separating the
+"this" and "task" group is the ~. We only have 2 results, then, as reflected
+in the case statement: **you should not refer to the ignored results in the
+case statement**.
+
+Below is an example of something you do not want to do. It may potentially confuse
+the parser and cause errors. **Always parenthesis main results/results separated
+by the ~.**
+
+```
+def testParser: Parser[Start] = 
+  "do" ~> "this" ~ "task" <~ "right" ^^ {
+    case t ~ ta => t + " " + ta
+```
+
+### Combinators in Combinators
+
+Instead of parsing only strings, you can also use other combinators in
+your combinator definition:
+
+```
+def doParser: Parser[String] = 
+  "do" ^^ { 
+    x => x.toUpperCase
+  }
+
+def thisParser: Parser[String] =
+  "this"
+
+def doThisParser: Parser[String] = 
+  doParser ~ thisParser ^^ {
+    case x ~ y => x + y
+  }
+```
+
+The `doThisParser` uses `doParser`, which parses "do" and returns "DO", and the
+`thisParser`, which parses/returns "this", to parse both words and return 
+"DOthis". The result of the other parse combinators will be passed
+into the trasformation function (i.e. "DO" and "this").
+
+You can exert more control over the parser combinators used in your definitions
+using particular operators.
+
+#### `?`: Optionality 
+
+The `?` operator will make the parser combinator optional: it can either succeed,
+or it can fail and not cause any issues.
+
+```
+def doParser: Parser[String] = 
+  "do" ^^ { 
+    x => x.toUpperCase
+  }
+
+def thisParser: Parser[String] =
+  "this"
+
+def doThisParser: Parser[String] = 
+  doParser ~ thisParser.? ^^ {
+    case x ~ None => x 
+    case x ~ Some(y) => x + y
+  }
+```
+
+`doThisParser` can now parse just "do", or "do" and "this". Depending on how the
+parse goes, the second result may or may not exist. This is reflected in the
+2 case statemnts that now exist in the trasformation function. The first case
+occurs if "this" was not parsed: a None object will exist as the second
+result. In the case that it was parsed, then the result will be wrapped in a
+Some class: to access the actual result, you pattern match with the Some class
+as shown above.
+
+
+#### `*`: Any Number
+
+`*` tells the parser that it can parse nothing or any number of the particular
+combinator that it is used on.
+
+```
+def doParser: Parser[String] = 
+  "do" ^^ { 
+    x => x.toUpperCase
+  }
+
+def thisParser: Parser[String] =
+  "this"
+
+def doThisParser: Parser[String] = 
+  doParser ~ thisParser.* ^^ {
+    case x ~ listOfThis => 
+      val final = x
+
+      for (t <- listOfThis) {
+        final = final + " " + t
+      }
+
+      final
+  }
+```
+
+This is able to parse "do", followed by any number of "this"s that may exist.
+Note that `thisParser.*` now returns a `List` of Strings as its result. The
+list can be empty if no "this" is parsed. Otherwise it can have any number
+of "this"s.
+
+#### `+`: At Least One
+
+`+` says that you need to have the parser combinator succeed at least once.
+
+
+```
+def doParser: Parser[String] = 
+  "do" ^^ { 
+    x => x.toUpperCase
+  }
+
+def thisParser: Parser[String] =
+  "this"
+
+def doThisParser: Parser[String] = 
+  doParser ~ thisParser.+ ^^ {
+    case x ~ listOfThis => 
+      val final = x
+
+      for (t <- listOfThis) {
+        final = final + " " + t
+      }
+
+      final
+  }
+```
+
+This will parse "do" followed by at least one "this". Like `*`, the result
+of `thisParser.+` will be a list, except in this case it will have at least
+one element due to `+` requiring one exist for the parser to succeed.
+
+
+## Parser Combinator Construction: Regex
+
+You can use regex in your parser combinators if you extended the RegexParser
+class.
+
+
+
+
+## Parser Combinator Construction: Other Things
+
+### Whitespace Specification
+
+### Returning Things Other Than Strings
 
 
 ## Using The Parser
