@@ -54,7 +54,7 @@ parse result as input and applies some kind of transformation to it. The
 type of the result of this transformation must be the return type specified
 in the function signature. The transformation is **optional**.
 
-### Example 1
+#### Example 1
 
 The following code parses "do" and returns it as the value you can access.
 
@@ -66,7 +66,7 @@ def doParser: Parser[String] =
 Note that no transformation is applied. Since "do" itself is a String, 
 the compiler will not complain since I specified the return type to be String.
 
-### Example 2
+#### Example 2
 
 The following code parses "do" and capitalizes it.
 
@@ -96,7 +96,7 @@ In this case, you give the passed in result an explicit name `x` that you can
 refer to. This will also allow you to make your transformation more complex 
 (see below).
 
-### Example 3
+#### Example 3
 
 The transformation can be more complex than the ones above. 
 
@@ -112,6 +112,14 @@ def doParser: Parser[String] =
 Here, I add "hello" and "1" to "do" and return "dohello1". I believe that
 you **cannot** use `_` to refer to "do" in this example, so you have
 to use this other anonymous function syntax.
+
+## Parser Combinator Construction: Advanced
+
+The above example combinators are limited in what they can parse: you can only
+parse a simple string.
+
+You can add more power to your combinator by using `~`, `~>`, `<~` and other
+operators.
 
 
 ## Using The Parser
