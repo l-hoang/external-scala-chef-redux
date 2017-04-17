@@ -53,6 +53,9 @@ the original Chef syntax.
 
 ## Files Overview
 
+Note that these descriptions are the same as ScalaChefRedux's
+descriptions except for ChefHelpers, ChefParser, and ScalaChefRedux.
+
 ### ChefHelpers.scala
 
 Contains the helper classes `ChefIngredient` and `ChefStack`, which
@@ -113,6 +116,16 @@ value or a transformation applied to the parsed value. They are particularly
 powerful as you can combine parsing combinators together to form a new
 parsing combinator that is capable of parsing what its parts are capable of
 parsing.
+
+The important thing is that ChefLines are being returned by some of the parsers,
+which allows me to take advantage of my existing code from the internal DSL
+version of Chef since I can then replace the internal DSL parsing infrastructure
+with the parsing combinator version.
+
+Regex is used with the parsing combinators to do parsing of the Chef program.
+
+**For more details on how it works, see the `ChefParser` file where I have
+extensively commented on how it works + what I am doing.**
 
 Here are some helpful sources on these parsing combinators and how to use them.
 
