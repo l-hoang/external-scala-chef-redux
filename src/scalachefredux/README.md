@@ -337,19 +337,63 @@ one element due to `+` requiring one exist for the parser to succeed.
 ## Parser Combinator Construction: Regex
 
 You can use regex in your parser combinators if you extended the RegexParser
-class.
+class. Simply add a `.r` to your string to convert into a regex expression.
 
+```
+def alphaParse: Parser[String] =
+  """[A-Za-z]""".r
+```
 
+If you are familiar with regex, you will know that this says to parse any
+single alpha character. Note the use of `"""`: I don't know how
+to explain it well, but it has something to do with formatting in Scala,
+and most examples I've seen use it for regex. The important thing to know
+is that it's still a String.
 
+Once you are in "regex mode" you can basically do anything that you can 
+do in regex. For details, I recommend looking up basic regex tutorials and
+the such.
+
+Note `?`, `*`, and `+` exist in regex as well, and they work the same as explained 
+above, except you do not need to prepend them with `.`. Additionally, it will 
+only apply to the token that directly preceeds it. For example, if I did
+`""" +""".r`, it would parse at least 1 space character.
+
+See the ChefParser code from some examples of regex.
 
 ## Parser Combinator Construction: Other Things
 
 ### Whitespace Specification
 
+You will find this near the beginning of the ChefParser code:
+
+```
+  override def skipWhitespace = true
+  override val whiteSpace = "[ \t\r\f]+".r
+```
+
+This tells to parser to skip white space between parser combinators but not
+while within a parser combinator itself. The ``whitespace`` val specifies
+what the parser should consider as whitespace to skip.
+
 ### Returning Things Other Than Strings
 
+My examples so far return Strings. You can return things other than strings.
+Here is an example from ChefParser:
+
+```
+def cleanLineT: Parser[ChefLine] = 
+  """Clean +the +mixing +bowl""".r <~ "." ^^ {
+    _ => ClearStack(1)
+  }
+```
+
+The return type here is ``ChefLine``. In most cases if you return
+something that isn't a string, then you need to have your transformation
+function return something that is the type you want to return since by default
+most parse results will be Strings. Here, my transformation function
+returns ``ClearStack(1)`` which is of type ChefLine.
 
 ## Using The Parser
-
 
 TODO
