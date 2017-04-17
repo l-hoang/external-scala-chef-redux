@@ -34,8 +34,8 @@ A parser combinator has the following structure to it:
 
 ```
 def exampleCombinator: Parser[<Return Type>] = {
-    <insert thing to parse here> ^^ 
-    <insert trasformation on parsed value here>
+  <insert thing to parse here> ^^ 
+  <insert trasformation on parsed value here>
 }
 ```
 
@@ -60,7 +60,7 @@ The following code parses "do" and returns it as the value you can access.
 
 ```
 def doParser: Parser[String] = 
-    "do"
+  "do"
 ```
 
 Note that no transformation is applied. Since "do" itself is a String, 
@@ -72,7 +72,7 @@ The following code parses "do" and capitalizes it.
 
 ```
 def doParser: Parser[String] = 
-    "do" ^^ { _.toUpperCase }
+  "do" ^^ { _.toUpperCase }
 ```
 
 Here, we parse "do". If parsing it is successful, then we will pass in the 
@@ -89,7 +89,7 @@ Alternatively, you can use this syntax as well:
 
 ```
 def doParser: Parser[String] = 
-    "do" ^^ { x => x.toUpperCase }
+  "do" ^^ { x => x.toUpperCase }
 ```
 
 In this case, you give the passed in result an explicit name `x` that you can
@@ -102,11 +102,11 @@ The transformation can be more complex than the ones above.
 
 ```
 def doParser: Parser[String] = 
-    "do" ^^ { 
-      x => 
-        val test = x + "hello"
-        test + "1"
-    }
+  "do" ^^ { 
+    x => 
+      val test = x + "hello"
+      test + "1"
+  }
 ```
 
 Here, I add "hello" and "1" to "do" and return "dohello1". I believe that
@@ -119,7 +119,49 @@ The above example combinators are limited in what they can parse: you can only
 parse a simple string.
 
 You can add more power to your combinator by using `~`, `~>`, `<~` and other
-operators.
+operators. Additionally, you can use parser combinators within other parser
+combinators to form more powerful combinators.
+
+## `~`: Chaining Parse Strings
+
+`~` allows you to chain together different things that you want to parse.
+
+```
+def testParser: Parser[Start] = 
+  "do" ~ "this"
+```
+
+The parser above will chain "do" and "this", and if you have whitespace ignoring
+on (see the beginning of my `ChefParser` for details), 
+it will be able to parse them even with spaces separating them.
+
+Using `~` makes transformations a bit more complex: we now have 2 (or more) results
+that need to be passed into the transformation function if we use one. In this
+case, you use case syntax to differentiate between the 2 parse results:
+
+```
+def testParser: Parser[Start] = 
+  "do" ~ "this" ^^ {
+    case d ~ t => 
+      d + " " + t
+```
+
+`case d ~ t` follows the same construction as the parse on the left: `d` will
+correspond to the first result, i.e. "do", and `t`, which is separated from
+`d` by the `~`, will correspond to the second result, i.e. `t`.
+
+You can extend this to multiple results:
+
+```
+def testParser: Parser[Start] = 
+  "do" ~ "this" ~ "task" ~ "right" ^^ {
+    case d ~ t ~ _ ~ r => 
+      d + " " + t + " " + r
+```
+
+Note that not all arguments need to be used.
+
+## Combinators in Combinators
 
 
 ## Using The Parser
