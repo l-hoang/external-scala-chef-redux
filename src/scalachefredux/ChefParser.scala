@@ -8,22 +8,47 @@ import scala.language.implicitConversions
  * https://enear.github.io/2016/03/31/parser-combinators/
  **/
 class ChefParser extends RegexParsers {
+  // This tells the parser to ignore whitespace when MOVING BETWEEN PARSER
+  // COMBINATORS. Whitespace will NOT be ignored when actually in the parsing
+  // rule.
   override def skipWhitespace = true
-  // need to be able to track new lines, so everything not a new line is
-  // considered whitespace
+
+  // This specifies which tokens need to be treated as whitespace by the 
+  // parser.
+  // I need to be able to track new lines, so the new line token is NOT
+  // included here.
   override val whiteSpace = "[ \t\r\f]+".r
 
+  /* This is the top level parser which will parse Chef recipes. */
   def chefProgram: Parser[List[ChefResult]] =
+    // First, parse a regular chefRecipe.
+    // Then, parse a new line and possibly more Chef recipes.
     chefRecipe ~ (newLine ~> chefRecipe).* ^^ {
+      // The result will be a chefRecipe, contained in r, and a list of
+      // chefRecipes contained in l. Merge the 2 things together to return
+      // a list of Chef recipes represented in ChefResult objects.
       case r ~ l => r :: l
     }
 
-  /* Parses a single recipe */
+  /* Parses a single Chef recipe */
   def chefRecipe: Parser[ChefResult] = 
+    // First, parse the title of the recipe as well as comments after the title
     (chefTitle <~ (comments)) ~ 
+    // Then, potentially parse the ingredient list as well as the optional
+    // cooking time and oven temperature. Finally, parse the (not optional)
+    // method declaration line.
     (ingredientList.? <~ (cookingTime.? <~ ovenTemp.? <~ methodDecl)) ~
+    // Parse at least 1 chefLine
     chefLine.+ ~
+    // (Optionally) parse the serves line that appears at the end of a recipe.
     serves.? ^^ { 
+      // There are 4 things that matter in this parse: the title,
+      // the ingredient list, the lines, and the serves statement. Some of 
+      // these things may not have been parsed due to being optional. 
+      // Therefore, cases are used to differentiate among the possible
+      // parsing results.
+      // Regardless, all cases need to return a ChefResult which will
+      // contain the result of parsing 1 Chef recipe.
       case _title ~ None ~ _lines ~ None => 
         new ChefResult(_title, List(), _lines)
       case _title ~ Some(_ingredients) ~ _lines ~ None => 
@@ -36,30 +61,70 @@ class ChefParser extends RegexParsers {
   
   /* Parses a title; drop the period at the end */
   def chefTitle: Parser[String] = 
+    // Parse the title at the beginning of the line, which is composed of
+    // alpha-num characters as well as some symbols. It must end in a
+    // period.
+    // Also, parse a newLine, which is a blank line.
     """^([A-Za-z0-9-_,\. ]+\.)""".r <~ newLine ^^ 
+    // x is the parsed string: I trim the period that must be parsed to return
+    // the title.
     { x => x.substring(0, x.length - 1) }
 
   /* Parse comments that follow a title */
   def comments: Parser[String] = 
+    // Comments are a bunch of alpha numeric characters with some allowed
+    // symbols. Note that new lines cannot appear in comments. Comments
+    // end with a blank line.
+
+    // Note that no transformation of the parse string occurs as I do not
+    // care for the result of the comments since they have no bearing
+    // on program execution.
     """[A-Za-z0-9-_ \.?!\"]*""".r <~ newLine
 
   /* Parses a number and returns a number */
   def number: Parser[Int] = 
+    // Simply parse a series of numbers.
+    // The transformation is _.toInt: the _ in this case represents
+    // the parsed value (i.e. the string of numbers), and I call toInt
+    // on the string to convert it to an Int to be returned.
     """[0-9]+""".r ^^ { _.toInt }
 
   /* Parses ingredient declaration + list */
   def ingredientList: Parser[List[ChefIngredient]] =
+    // Parse the ingredient declaration (the output for it is ignored
+    // via ~>), and parse at least 1 ingredient.
     ingredientDecl ~> ingredient.+
 
   /* Parses the ingredient declaration */
   def ingredientDecl: Parser[String] =
+    // Parse the string "Ingredients." at the beginning of a line, then
+    // parse at least one new line character.
+
+    // No transformation applied as I do not care what is returned by
+    // this parser.
     """^(Ingredients\.)""".r <~ """[\n]+""".r
 
   /* Parses an ingredient */
   def ingredient: Parser[ChefIngredient] = 
-    number.? ~ measure.? ~ """[A-Za-z- _]+""".r <~ """[\n]+""".r ^^
-    { case None ~ None ~ _name => 
+    // Parse an optional number.
+    number.? ~ 
+    // Parse an optional measure.
+    measure.? ~ 
+    // Parse the ingredient name, which consists of alpha-numberic 
+    // characters and possibly spaces/symbols.
+    """[A-Za-z- _]+""".r 
+    // The use of <~ means the new line characters parsed by this will
+    // not appear in the output.
+    <~ """[\n]+""".r ^^ { 
+      // There are different cases depending on the success of parsing
+      // the optional number/measure
+
+      // Failed to parse number/measure: just return the ingredient
+      // with its name
+      case None ~ None ~ _name => 
         new ChefIngredient(_name, I_EITHER)
+      // Parsed a measure: I have to do some analysis on that parsed string
+      // to determine which ingredient interpretation to use.
       case None ~ Some(y) ~ _name => 
         if ((y startsWith "heaped") || (y startsWith "level")) {
           // always dry
@@ -78,8 +143,13 @@ class ChefParser extends RegexParsers {
             case _ => throw new RuntimeException("bad measure")
           }
         }
+      // Parsed an initial value (the number): return the ingredient
+      // with that initial value.
       case Some(x) ~ None ~ _name => 
         new ChefIngredient(_name, I_EITHER, x)
+      // Parsed both a number and the measure spec: do analysis on the
+      // measure string, and return an ingredient based on that analysis
+      // as well as the parsed number.
       case Some(x) ~ Some(y) ~ _name => 
         if ((y startsWith "heaped") || (y startsWith "level")) {
           // always dry
@@ -102,39 +172,75 @@ class ChefParser extends RegexParsers {
 
   /* Parses heaped/level */
   def heapedLevel: Parser[String] =
+    // Parsed either "heaped" or "level". The use of \b on the ends
+    // makes it so heaped must be its own word (otherwise it will
+    // parse something like "levelup" or "heapedasdf".
+
+    // Note no transformation of the parsed string is necessary as it
+    // will be "heaped" or "level", which is what I want to return.
     ("""\bheaped\b""".r | """\blevel\b""".r)
 
   /* Parses a measure, which may include an option heaped/level */
   def measure: Parser[String] = 
-    heapedLevel.? ~ ("""\bkg\b""".r | """\bg\b""".r | """\bpinches\b""".r | 
+    // Parse the optional heaped/level.
+    heapedLevel.? ~ 
+    // then parse one of the measure specs possible: the use of \b on the ends
+    // makes it parse the measures only if they appear as their own word.
+    ("""\bkg\b""".r | """\bg\b""".r | """\bpinches\b""".r | 
     """\bpinch\b""".r | """\bml\b""".r | """\bl\b""".r | """\bdashes\b""".r | 
     """\bdash\b""".r | """\bcups\b""".r | """\bcup\b""".r | 
     """\bteaspoons\b""".r | """\bteaspoon\b""".r | """\btablespoons\b""".r | 
-    """\btablespoon\b""".r) ^^
-    { case None ~ _measure => _measure
-      case Some(h) ~ _measure => h + " " + _measure }
+    """\btablespoon\b""".r) ^^ { 
+      // If the heaped/level doesn't appear, then just return the measure
+      case None ~ _measure => _measure
+      // If the heaped/level appears, then return it prepended to the 
+      // parsed measure with a space between them.
+      case Some(h) ~ _measure => h + " " + _measure 
+    }
   
   /* Parses cooking time */
   def cookingTime: Parser[String] = 
-    "Cooking time: " <~ """[0-9]+""".r <~ 
+    // Parse the cooking time string.
+    "Cooking time: " <~ 
+    // parse the number
+    """[0-9]+""".r <~ 
+    // Parse the (optional) time specification. \b used to make sure it parses
+    // the spec by itself as a word and not as part of another word.
     ("""\bhours\b""".r | """\bhour\b""".r | """\bminutes\b""".r | 
-    """\bminute\b""".r).? <~ "." <~ newLine
+    """\bminute\b""".r).? <~ 
+    // Parse a period, then a newLine (i.e. blank line)
+    "." <~ newLine
+    // No xform applied as I don't care for the result of this parse.
+
 
   /* Parses the oven temperature */
   def ovenTemp: Parser[String] =
+    // Parse the specified text, a number, then more specified text
     "Pre-heat oven to " <~ """[0-9]+""".r <~ "degrees Celsius" <~
+    // Parse the optional gasmark, a period, then a blank line
     gasMark.? <~ "." <~ newLine
+    // No xform applied as I don't care for the result of this parse.
 
   /* Parses the gas mark specification */
   def gasMark: Parser[Int] = 
+    // Parse open parens, "gas mark ", a number, the close parens.
+
+    // No xform applied as I don't care for the result of this parse.
     "(" ~> "gas mark " ~> number <~ ")"
 
   /* Parses the method declaration */
   def methodDecl: Parser[String] = 
+    // Parse Method. at the beginning of some line and at least 1 new line
+    // character.
+    // No xform applied as I don't care for the result of this parse.
     """^(Method\.)""".r <~ """[\n]+""".r
 
   /* Parses a Chef statement */
   def chefLine: Parser[ChefLine] = 
+    // A chef line is any one of these things below. Note that the order
+    // of these things actually matters as it will return the first match
+    // on these parser combinators (matters for lines that start with the
+    // same token, such as Add)
     (takeLine | takeLineT | putLine | putLine2 | foldLine | foldLine2 | 
     addDryLine | addDryLineT | addDryLine2 |
     addLine | addLineT | addLine2 | 
@@ -148,29 +254,51 @@ class ChefParser extends RegexParsers {
     pourLine | pourLine2 | pourLine3 | pourLine4 |
     verbEndLine2 | verbEndLine | verbLine |
     setLine | serveLine | 
-    refrigerateLine | refrigerateLine2 | refrigerateLine3 ) <~ """[\n]?""".r
+    refrigerateLine | refrigerateLine2 | refrigerateLine3 ) <~ 
+    // parse optional new line characters: note the use of <~ means that the
+    // new lines will be ignored in the output
+    """[\n]?""".r
+    // Note I do not need to apply an xform to the parsed result: the
+    // lines above return a ChefLine, and sinc I used <~ to ignore parsed new
+    // lines, all that will be returned is the ChefLine returned by the
+    // line parsers
 
   /* Parses a Take line */
   def takeLine: Parser[ChefLine] =
-    "Take " ~> """[A-Za-z- _]+ +from +refrigerator""".r <~ "." ^^ { longString =>
-      // get the ingredient name
+    // Parse take; ignored in output due to ~>
+    "Take " ~> 
+    // Parse an ingredient name, then the following text. The + in front
+    // of the words applies to the " " character and not the word itself:
+    // it means arbitrary spaces can appear.
+    """[A-Za-z- _]+ +from +refrigerator""".r <~ "." ^^ { longString =>
+      // get the ingredient name from the long parse since it contains
+      // from refrigerator as well
       val fromIndex = longString lastIndexOf "from"
       val onlyIngredient = longString.substring(0, fromIndex).trim
+      // return the read line with the ingredient name only
       Read(onlyIngredient)
    }
 
   /* Parses a Take line, the */
   def takeLineT: Parser[ChefLine] =
-    "Take " ~> """[A-Za-z- _]+ +from +the +refrigerator""".r <~ "." ^^ { longString =>
-      // get the ingredient name
+    // parse/ignore take
+    "Take " ~> 
+    // parse ingredient name, then rest of the string with arbitrary whitespace
+    // between words
+    """[A-Za-z- _]+ +from +the +refrigerator""".r <~ "." ^^ { longString =>
+      // get the ingredient name from the long string parsed (contains
+      // from the refrigerator
       val fromIndex = longString lastIndexOf "from"
       val onlyIngredient = longString.substring(0, fromIndex).trim
+      // return read line
       Read(onlyIngredient)
    }
 
   /* Parses a Put line */
   def putLine: Parser[ChefLine] = 
+    // parse/ignore put, parse ingredient name along with the rest of the line
     "Put " ~> """[A-Za-z- _]+ +into +mixing +bowl""".r ~ number.? <~ "." ^^ {
+      // split into cases depending on the parsing of a number
       case longString ~ None =>
         Push(getIngredient(longString, "into"), 1)
       case longString ~ Some(bowl) =>
@@ -464,9 +592,13 @@ class ChefParser extends RegexParsers {
 
   /* Deal with new lines, i.e. require 1 at least */
   def newLine: Parser[String] = 
+    // Note this says to parse at least 2 new line characters (which 
+    // corresponds to a blank line in text)
     """[\n]{2,}""".r
 
-  /* Get ingredient given that last word after the ingredient */
+
+  /* Helper function for string manipulation.
+   * Get ingredient given that last word after the ingredient */
   def getIngredient(uncut: String, lastWord: String) =
     uncut.substring(0, uncut lastIndexOf lastWord).trim
 }
