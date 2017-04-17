@@ -396,4 +396,51 @@ returns ``ClearStack(1)`` which is of type ChefLine.
 
 ## Using The Parser
 
-TODO
+Say your parser instance is contained in the varialbe ``parser``.
+To parse something, do the following:
+
+```
+parser.parse(parser.doThisParser, <insert text to parse here>)
+```
+
+In the above example, I want to parse "do" and "this", so I specify that
+that is the top level parser combinator I want to use as the first
+argument to ``parse``. The second argument contains the String that you want
+to parse. You can read a file and convert it into a String to parse it that
+way.
+
+``parse`` will return a ParseResult value. Say I save it to the val ``result``.
+I can get access to the return value of the ``doThisParser`` by doing the
+following:
+
+```
+result.get
+```
+
+In the case of the ``doThisParser``, I will get "DOthis" from this call.
+
+If the parse fails, then calling ``get`` on ``result`` will result in an
+error. You can check to make sure that the parse was successful by checking
+the ParseResult value itself. Details on one method of doing this can be found
+at the following page:
+
+https://wiki.scala-lang.org/display/SW/Parser+Combinators--Getting+Started
+
+There are other commands in the parser class that you can use as well,
+but in most cases, ``parse`` will be enough to do what you need to do.
+
+
+
+
+
+## How ScalaChefRedux Uses the Parser
+
+My implementation mainly uses the parser combinators to parse lines and create
+ChefLines out of each line. I can save these ChefLines into a ChefText object
+as an interal representation of the information needed to run the program.
+After parsing is complete, I have everything I need to run the program.
+
+Specifically, if you check the code, then you will see that the parser
+combinator returns a list of recipe information which I use to set up
+the ChefText and other things need to run the program.
+
